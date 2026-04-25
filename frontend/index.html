@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ritual Private Chat</title>
+  <script src="https://cdn.jsdelivr.net/npm/react@18/umd/react.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6/dist/ethers.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@babel/standalone/babel.min.js"></script>
+  <style>
+    :root {
+      --bg:        #0d0d0d;
+      --surface:   #1a1a1a;
+      --surface2:  #242424;
+      --border:    #2e2e2e;
+      --accent:    #7c5cbf;
+      --accent-h:  #9b7ee0;
+      --text:      #e8e8e8;
+      --text-dim:  #888;
+      --user-bg:   #2a2040;
+      --ai-bg:     #1e2a1e;
+      --danger:    #c0392b;
+      --success:   #27ae60;
+      --radius:    12px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    /* ── Header ─────────────────────────────────────────────── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .header-title { font-size: 16px; font-weight: 700; color: var(--accent-h); }
+    .header-sub   { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+    .btn {
+      padding: 8px 16px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: opacity .15s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary  { background: var(--accent); color: #fff; }
+    .btn-sm       { padding: 5px 10px; font-size: 12px; }
+    .btn-danger   { background: var(--danger); color: #fff; }
+    .btn-ghost    { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+    /* ── Layout ─────────────────────────────────────────────── */
+    .layout {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+    /* ── Sidebar ────────────────────────────────────────────── */
+    .sidebar {
+      width: 260px;
+      background: var(--surface);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
+    .sidebar-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-header span { font-size: 13px; font-weight: 600; color: var(--text-dim); }
+    .session-list { flex: 1; overflow-y: auto; padding: 8px; }
+    .session-item {
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-bottom: 4px;
+      transition: background .1s;
+    }
+    .session-item:hover   { background: var(--surface2); }
+    .session-item.active  { background: var(--user-bg); border: 1px solid var(--accent); }
+    .session-name  { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .session-meta  { font-size: 11px; color: var(--text-dim); margin-top: 3px; }
+    .session-badge {
+      display: inline-block;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 700;
+      margin-left: 6px;
+    }
+    .badge-active   { background: #1a3a1a; color: var(--success); }
+    .badge-archived { background: #2a2a1a; color: #c0a020; }
+    /* ── Chat area ──────────────────────────────────────────── */
+    .chat-area {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .chat-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-shrink: 0;
+    }
+    .chat-title { font-size: 15px; font-weight: 700; }
+    .chat-actions { display: flex; gap: 8px; }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .message {
+      max-width: 72%;
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      line-height: 1.55;
+      font-size: 14px;
+      position: relative;
+    }
+    .message.user      { background: var(--user-bg); align-self: flex-end; border-bottom-right-radius: 4px; }
+    .message.assistant { background: var(--ai-bg); align-self: flex-start; border-bottom-left-radius: 4px; }
+    .message-role  { font-size: 11px; font-weight: 700; color: var(--text-dim); margin-bottom: 4px; text-transform: uppercase; letter-spacing: .05em; }
+    .message-body  { word-break: break-word; white-space: pre-wrap; }
+    .message-footer{ font-size: 10px; color: var(--text-dim); margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+    .pending-dot   { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #c0a020; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+    .delivered-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--success); }
+    .media-tag { background: var(--surface2); border-radius: 4px; padding: 2px 6px; font-size: 11px; }
+    /* ── Input bar ──────────────────────────────────────────── */
+    .input-bar {
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+      background: var(--surface);
+      flex-shrink: 0;
+    }
+    .input-row { display: flex; gap: 8px; align-items: flex-end; }
+    .input-wrap { flex: 1; position: relative; }
+    textarea {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      color: var(--text);
+      font-size: 14px;
+      padding: 10px 14px;
+      resize: none;
+      min-height: 44px;
+      max-height: 160px;
+      font-family: inherit;
+      outline: none;
+      transition: border .15s;
+    }
+    textarea:focus { border-color: var(--accent); }
+    .input-hint { font-size: 11px; color: var(--text-dim); margin-top: 6px; display: flex; gap: 12px; }
+    /* ── Empty states ───────────────────────────────────────── */
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-dim);
+      gap: 12px;
+    }
+    .empty-icon { font-size: 48px; opacity: .4; }
+    .empty-title { font-size: 16px; font-weight: 600; }
+    .empty-sub   { font-size: 13px; text-align: center; max-width: 280px; }
+    /* ── Modal ──────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 100;
+    }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 360px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .modal h3 { font-size: 16px; font-weight: 700; }
+    .modal input {
+      width: 100%; background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 8px; color: var(--text); font-size: 14px; padding: 10px 12px; outline: none;
+    }
+    .modal input:focus { border-color: var(--accent); }
+    .modal-actions { display: flex; gap: 8px; justify-content: flex-end; }
+    /* ── Toast ──────────────────────────────────────────────── */
+    .toast-wrap {
+      position: fixed; bottom: 24px; right: 24px; z-index: 200;
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .toast {
+      padding: 10px 16px; border-radius: 8px; font-size: 13px;
+      background: var(--surface2); border: 1px solid var(--border);
+      animation: slide-in .2s ease;
+      max-width: 320px;
+    }
+    .toast.error { border-color: var(--danger); color: #ff7070; }
+    .toast.success { border-color: var(--success); color: #7fdf7f; }
+    @keyframes slide-in { from { transform: translateX(40px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+    /* ── Connect screen ─────────────────────────────────────── */
+    .connect-screen {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; gap: 20px;
+    }
+    .connect-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 40px; text-align: center;
+      max-width: 420px; width: 100%;
+    }
+    .connect-logo { font-size: 56px; margin-bottom: 16px; }
+    .connect-title { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .connect-sub { font-size: 14px; color: var(--text-dim); margin-bottom: 24px; line-height: 1.6; }
+    .addr-badge {
+      background: var(--surface2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 6px 14px; font-size: 12px;
+      font-family: monospace; color: var(--text-dim);
+    }
+    /* scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+// ── CONFIG ────────────────────────────────────────────────────────────────────
+const CONTRACT_ADDRESS = "0x0000000000000000000000000000000000000000"; // replace after deploy
+const RITUAL_CHAIN_ID  = 1979;
+const RITUAL_RPC       = "https://rpc.ritualfoundation.org";
+
+// ── ABI (minimal) ─────────────────────────────────────────────────────────────
+const ABI = [
+  "function createSession(string title, bytes ecdhPubKey) returns (uint256)",
+  "function archiveSession(uint256 sid)",
+  "function deleteSession(uint256 sid)",
+  "function getSession(uint256 sid) view returns (tuple(uint256 id, address owner, string title, bytes ecdhPublicKey, uint8 status, uint256 createdAt, uint256 updatedAt, uint256 messageCount))",
+  "function getUserSessions(address user) view returns (uint256[])",
+  "function sendMessage(uint256 sid, uint8 modality, bytes ciphertext, bytes nonce, string ipfsCid, bool dispatchAI) payable returns (uint256)",
+  "function getMessages(uint256 sid, uint256 offset, uint256 limit) view returns (tuple(uint256 id, uint8 role, uint8 modality, bytes ciphertext, bytes nonce, string ipfsCid, uint256 timestamp, bool pending, uint256 jobId)[] msgs, uint256 total)",
+  "function totalSessions() view returns (uint256)",
+  "event SessionCreated(uint256 indexed sessionId, address indexed owner, string title, uint256 timestamp)",
+  "event MessageSent(uint256 indexed sessionId, uint256 indexed messageId, uint8 role, uint8 modality, uint256 timestamp)",
+  "event ResponseDelivered(uint256 indexed sessionId, uint256 indexed messageId, uint256 jobId)",
+];
+
+// ── Crypto helpers ────────────────────────────────────────────────────────────
+async function deriveSessionKey(signer, sessionId) {
+  const msg = `Ritual Chat Session Key\nSession: ${sessionId}\nThis signature generates your encryption key.`;
+  const sig = await signer.signMessage(msg);
+  const sigBytes = ethers.getBytes(sig);
+  const km = await crypto.subtle.importKey("raw", sigBytes, { name: "HKDF" }, false, ["deriveKey"]);
+  return crypto.subtle.deriveKey(
+    { name: "HKDF", hash: "SHA-256",
+      salt: new TextEncoder().encode(`ritual-chat-v1-session-${sessionId}`),
+      info: new TextEncoder().encode("aes-gcm-key") },
+    km, { name: "AES-GCM", length: 256 }, false, ["encrypt", "decrypt"]
+  );
+}
+
+async function encryptMsg(plaintext, key) {
+  const nonce = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: "AES-GCM", iv: nonce }, key, new TextEncoder().encode(plaintext));
+  return { ciphertext: new Uint8Array(ct), nonce };
+}
+
+async function decryptMsg(ctBytes, nonceBytes, key) {
+  try {
+    const pt = await crypto.subtle.decrypt({ name: "AES-GCM", iv: nonceBytes }, key, ctBytes);
+    return new TextDecoder().decode(pt);
+  } catch { return "[encrypted]"; }
+}
+
+async function genECDHKeyPair() {
+  const kp = await crypto.subtle.generateKey({ name: "ECDH", namedCurve: "P-256" }, true, ["deriveKey", "deriveBits"]);
+  const raw = await crypto.subtle.exportKey("raw", kp.publicKey);
+  return { publicKeyBytes: new Uint8Array(raw), keyPair: kp };
+}
+
+// ── App ───────────────────────────────────────────────────────────────────────
+const { useState, useEffect, useRef, useCallback } = React;
+
+function App() {
+  const [account, setAccount]         = useState(null);
+  const [provider, setProvider]       = useState(null);
+  const [signer, setSigner]           = useState(null);
+  const [sessions, setSessions]       = useState([]);
+  const [activeSession, setActive]    = useState(null);
+  const [messages, setMessages]       = useState([]);
+  const [input, setInput]             = useState("");
+  const [loading, setLoading]         = useState(false);
+  const [showNewSession, setShowNew]  = useState(false);
+  const [newTitle, setNewTitle]       = useState("");
+  const [toasts, setToasts]           = useState([]);
+  const [keyCache, setKeyCache]       = useState({});
+  const [ecdhCache, setEcdhCache]     = useState({});
+  const messagesEndRef = useRef(null);
+  const fileInputRef   = useRef(null);
+
+  const toast = useCallback((msg, type = "info") => {
+    const id = Date.now();
+    setToasts(t => [...t, { id, msg, type }]);
+    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3500);
+  }, []);
+
+  // ── Connect ───────────────────────────────────────────────────────────────
+  async function connect() {
+    if (!window.ethereum) { toast("MetaMask not found", "error"); return; }
+    try {
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      const p = new ethers.BrowserProvider(window.ethereum);
+      const s = await p.getSigner();
+      const addr = await s.getAddress();
+      const net = await p.getNetwork();
+      if (Number(net.chainId) !== RITUAL_CHAIN_ID) {
+        try {
+          await window.ethereum.request({ method: "wallet_switchEthereumChain", params: [{ chainId: "0x7BB" }] });
+        } catch (e) {
+          if (e.code === 4902) {
+            await window.ethereum.request({ method: "wallet_addEthereumChain", params: [{
+              chainId: "0x7BB", chainName: "Ritual Chain",
+              nativeCurrency: { name: "RITUAL", symbol: "RITUAL", decimals: 18 },
+              rpcUrls: [RITUAL_RPC],
+              blockExplorerUrls: ["https://explorer.ritualfoundation.org"],
+            }]});
+          }
+        }
+      }
+      setProvider(p); setSigner(s); setAccount(addr);
+      toast("Wallet connected", "success");
+    } catch(e) { toast(e.message, "error"); }
+  }
+
+  // ── Load sessions ─────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!signer || !account) return;
+    loadSessions();
+  }, [signer, account]);
+
+  async function getContract(withSigner = true) {
+    return new ethers.Contract(CONTRACT_ADDRESS, ABI, withSigner ? signer : provider);
+  }
+
+  async function loadSessions() {
+    try {
+      const c = await getContract(false);
+      const ids = await c.getUserSessions(account);
+      const loaded = await Promise.all(ids.map(async id => {
+        const s = await c.getSession(id);
+        return { id: s.id, title: s.title, status: s.status, messageCount: s.messageCount, updatedAt: s.updatedAt };
+      }));
+      setSessions(loaded.reverse());
+    } catch(e) { toast("Failed to load sessions: " + e.message, "error"); }
+  }
+
+  // ── Load messages ─────────────────────────────────────────────────────────
+  async function loadMessages(sid) {
+    try {
+      const c = await getContract(false);
+      const [msgs, total] = await c.getMessages(sid, 0, 100);
+      let key = keyCache[sid.toString()];
+      if (!key) {
+        key = await deriveSessionKey(signer, sid);
+        setKeyCache(k => ({ ...k, [sid.toString()]: key }));
+      }
+      const decrypted = await Promise.all(msgs.map(async m => {
+        const ct = ethers.getBytes(m.ciphertext);
+        const n  = ethers.getBytes(m.nonce);
+        const text = await decryptMsg(ct, n, key);
+        return { id: m.id, role: m.role, modality: m.modality, text,
+          ipfsCid: m.ipfsCid, timestamp: m.timestamp, pending: m.pending, jobId: m.jobId };
+      }));
+      setMessages(decrypted);
+    } catch(e) { toast("Failed to load messages: " + e.message, "error"); }
+  }
+
+  useEffect(() => {
+    if (activeSession) loadMessages(activeSession.id);
+  }, [activeSession]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── Create session ────────────────────────────────────────────────────────
+  async function createSession() {
+    if (!newTitle.trim()) return;
+    setLoading(true);
+    try {
+      const { publicKeyBytes } = await genECDHKeyPair();
+      const c = await getContract();
+      const tx = await c.createSession(newTitle.trim(), publicKeyBytes);
+      const rc = await tx.wait();
+      toast("Session created!", "success");
+      setShowNew(false); setNewTitle("");
+      await loadSessions();
+    } catch(e) { toast(e.message, "error"); } finally { setLoading(false); }
+  }
+
+  // ── Send message ──────────────────────────────────────────────────────────
+  async function sendMessage() {
+    if (!input.trim() || !activeSession || loading) return;
+    const text = input.trim();
+    setInput(""); setLoading(true);
+    try {
+      const sid = activeSession.id;
+      let key = keyCache[sid.toString()];
+      if (!key) {
+        key = await deriveSessionKey(signer, sid);
+        setKeyCache(k => ({ ...k, [sid.toString()]: key }));
+      }
+      const { ciphertext, nonce } = await encryptMsg(text, key);
+      const c = await getContract();
+      const tx = await c.sendMessage(sid, 0, ciphertext, nonce, "", true);
+      await tx.wait();
+      toast("Message sent", "success");
+      await loadMessages(sid);
+    } catch(e) { toast(e.message, "error"); } finally { setLoading(false); }
+  }
+
+  async function handleImageUpload(e) {
+    const file = e.target.files?.[0];
+    if (!file || !activeSession) return;
+    toast("Image upload: encode to IPFS and provide CID for full media support", "info");
+  }
+
+  function handleKeyDown(e) {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  // ── Archive / Delete ──────────────────────────────────────────────────────
+  async function archiveSession(sid, e) {
+    e.stopPropagation();
+    try {
+      const c = await getContract();
+      await (await c.archiveSession(sid)).wait();
+      toast("Session archived", "success");
+      if (activeSession?.id === sid) { setActive(null); setMessages([]); }
+      await loadSessions();
+    } catch(e) { toast(e.message, "error"); }
+  }
+
+  // ── Render helpers ────────────────────────────────────────────────────────
+  function formatTime(ts) {
+    const d = new Date(Number(ts) * 1000);
+    return d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  }
+
+  function modalityIcon(m) { return m === 0 ? "💬" : m === 1 ? "🖼️" : "🎵"; }
+
+  // ── Not connected ─────────────────────────────────────────────────────────
+  if (!account) return (
+    <div style={{ display:"flex", flexDirection:"column", height:"100vh" }}>
+      <div className="header">
+        <div><div className="header-title">🔐 Ritual Private Chat</div>
+          <div className="header-sub">Private multi-modal AI on Ritual Chain</div>
+        </div>
+      </div>
+      <div className="connect-screen">
+        <div className="connect-card">
+          <div className="connect-logo">🔐</div>
+          <div className="connect-title">Ritual Private Chat</div>
+          <div className="connect-sub">
+            End-to-end encrypted AI conversations on Ritual Chain.<br/>
+            Your messages are encrypted with AES-256-GCM before being stored on-chain.
+          </div>
+          <button className="btn btn-primary" style={{width:"100%"}} onClick={connect}>
+            Connect MetaMask
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ── Main UI ───────────────────────────────────────────────────────────────
+  return (
+    <div style={{ display:"flex", flexDirection:"column", height:"100vh" }}>
+      {/* Header */}
+      <div className="header">
+        <div>
+          <div className="header-title">🔐 Ritual Private Chat</div>
+          <div className="header-sub">Chain ID: {RITUAL_CHAIN_ID} · AES-256-GCM encrypted</div>
+        </div>
+        <div className="addr-badge">{account.slice(0,6)}…{account.slice(-4)}</div>
+      </div>
+
+      <div className="layout">
+        {/* Sidebar */}
+        <div className="sidebar">
+          <div className="sidebar-header">
+            <span>Sessions ({sessions.length})</span>
+            <button className="btn btn-primary btn-sm" onClick={() => setShowNew(true)}>+ New</button>
+          </div>
+          <div className="session-list">
+            {sessions.length === 0 && (
+              <div style={{ padding:"16px", color:"var(--text-dim)", fontSize:"13px", textAlign:"center" }}>
+                No sessions yet.<br/>Click + New to start.
+              </div>
+            )}
+            {sessions.map(s => (
+              <div key={s.id.toString()}
+                className={`session-item ${activeSession?.id === s.id ? "active" : ""}`}
+                onClick={() => setActive(s)}>
+                <div className="session-name">
+                  {s.title}
+                  <span className={`session-badge ${s.status === 0 ? "badge-active" : "badge-archived"}`}>
+                    {s.status === 0 ? "active" : s.status === 1 ? "archived" : "deleted"}
+                  </span>
+                </div>
+                <div className="session-meta">
+                  {Number(s.messageCount)} msgs ·
+                  <button className="btn btn-ghost btn-sm" style={{marginLeft:6,padding:"1px 6px",fontSize:11}}
+                    onClick={e => archiveSession(s.id, e)}>archive</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Chat area */}
+        <div className="chat-area">
+          {!activeSession ? (
+            <div className="empty-state">
+              <div className="empty-icon">💬</div>
+              <div className="empty-title">Select a session</div>
+              <div className="empty-sub">Choose an existing session from the sidebar, or create a new one to start chatting.</div>
+            </div>
+          ) : (
+            <>
+              <div className="chat-header">
+                <div className="chat-title">{activeSession.title}</div>
+                <div className="chat-actions">
+                  <button className="btn btn-ghost btn-sm" onClick={() => loadMessages(activeSession.id)}>↻ Refresh</button>
+                </div>
+              </div>
+
+              <div className="messages">
+                {messages.length === 0 && (
+                  <div className="empty-state" style={{flex:"none",padding:"40px 0"}}>
+                    <div className="empty-icon" style={{fontSize:32}}>✨</div>
+                    <div className="empty-sub">Send your first message to start the conversation.</div>
+                  </div>
+                )}
+                {messages.map(m => (
+                  <div key={m.id.toString()} className={`message ${m.role === 0 ? "user" : "assistant"}`}>
+                    <div className="message-role">{m.role === 0 ? "You" : "AI Assistant"}</div>
+                    <div className="message-body">
+                      {m.modality !== 0 && <span className="media-tag">{modalityIcon(m.modality)} {m.modality === 1 ? "Image" : "Audio"}</span>}
+                      {m.modality !== 0 && m.ipfsCid && <div style={{fontSize:11,color:"var(--text-dim)",marginBottom:4}}>IPFS: {m.ipfsCid}</div>}
+                      {m.text}
+                    </div>
+                    <div className="message-footer">
+                      <span>{formatTime(m.timestamp)}</span>
+                      {m.pending
+                        ? <><span className="pending-dot"></span><span>Waiting for AI…</span></>
+                        : <><span className="delivered-dot"></span><span>Delivered</span></>
+                      }
+                    </div>
+                  </div>
+                ))}
+                <div ref={messagesEndRef} />
+              </div>
+
+              {activeSession.status === 0 && (
+                <div className="input-bar">
+                  <div className="input-row">
+                    <button className="btn btn-ghost btn-sm" title="Upload image"
+                      onClick={() => fileInputRef.current?.click()}>🖼️</button>
+                    <input ref={fileInputRef} type="file" accept="image/*,audio/*" style={{display:"none"}}
+                      onChange={handleImageUpload} />
+                    <div className="input-wrap">
+                      <textarea
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        placeholder="Type a message… (Enter to send, Shift+Enter for newline)"
+                        rows={1}
+                        disabled={loading}
+                      />
+                    </div>
+                    <button className="btn btn-primary" onClick={sendMessage} disabled={loading || !input.trim()}>
+                      {loading ? "…" : "Send"}
+                    </button>
+                  </div>
+                  <div className="input-hint">
+                    <span>🔒 AES-256-GCM encrypted</span>
+                    <span>⛓ Ritual Chain</span>
+                    <span>🤖 TEE AI inference</span>
+                  </div>
+                </div>
+              )}
+              {activeSession.status !== 0 && (
+                <div className="input-bar" style={{textAlign:"center",color:"var(--text-dim)",fontSize:13}}>
+                  This session is {activeSession.status === 1 ? "archived" : "deleted"}.
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* New session modal */}
+      {showNewSession && (
+        <div className="modal-overlay" onClick={() => setShowNew(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <h3>New Session</h3>
+            <input
+              autoFocus
+              value={newTitle}
+              onChange={e => setNewTitle(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && createSession()}
+              placeholder="Session title…"
+            />
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setShowNew(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={createSession} disabled={loading || !newTitle.trim()}>
+                {loading ? "Creating…" : "Create"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Toasts */}
+      <div className="toast-wrap">
+        {toasts.map(t => (
+          <div key={t.id} className={`toast ${t.type}`}>{t.msg}</div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>

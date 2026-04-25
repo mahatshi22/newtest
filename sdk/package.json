@@ -1,0 +1,17 @@
+{
+  "name": "@ritual-chat/sdk",
+  "version": "1.0.0",
+  "description": "TypeScript SDK for PrivateMultiModalChat on Ritual Chain",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "ethers": "^6.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

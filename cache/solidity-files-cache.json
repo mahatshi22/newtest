@@ -1,0 +1,228 @@
+{
+  "_format": "hh-sol-cache-2",
+  "files": {
+    "/home/runner/work/newtest/newtest/contracts/PrivateMultiModalChat.sol": {
+      "lastModificationDate": 1777116827993,
+      "contentHash": "efe6b2ac7e5cd66ba456a367619ed9ac",
+      "sourceName": "contracts/PrivateMultiModalChat.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "./interfaces/IAsyncJobTracker.sol",
+        "./interfaces/IAsyncDelivery.sol",
+        "./interfaces/ISecretsACL.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "PrivateMultiModalChat"
+      ]
+    },
+    "/home/runner/work/newtest/newtest/contracts/interfaces/IAsyncJobTracker.sol": {
+      "lastModificationDate": 1777116779141,
+      "contentHash": "676ef5ca8b15e9b4caadf731488832e3",
+      "sourceName": "contracts/interfaces/IAsyncJobTracker.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IAsyncJobTracker"
+      ]
+    },
+    "/home/runner/work/newtest/newtest/contracts/interfaces/ISecretsACL.sol": {
+      "lastModificationDate": 1777116779141,
+      "contentHash": "6ecfdd46d457ec1770a3c4f5c0e5c100",
+      "sourceName": "contracts/interfaces/ISecretsACL.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ISecretsACL"
+      ]
+    },
+    "/home/runner/work/newtest/newtest/contracts/interfaces/IAsyncDelivery.sol": {
+      "lastModificationDate": 1777116779141,
+      "contentHash": "bbc2c8cfd4139c84166ff61920f891fb",
+      "sourceName": "contracts/interfaces/IAsyncDelivery.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "IAsyncDelivery",
+        "IAsyncDeliveryReceiver"
+      ]
+    },
+    "/home/runner/work/newtest/newtest/contracts/mocks/MockAsyncJobTracker.sol": {
+      "lastModificationDate": 1777116827993,
+      "contentHash": "3d33b9e13ba5e55b0e6da33345502daa",
+      "sourceName": "contracts/mocks/MockAsyncJobTracker.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [
+        "../interfaces/IAsyncJobTracker.sol"
+      ],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "MockAsyncJobTracker"
+      ]
+    },
+    "/home/runner/work/newtest/newtest/contracts/interfaces/ITEEServiceRegistry.sol": {
+      "lastModificationDate": 1777116779141,
+      "contentHash": "f4312ae34a4106feb9cfa44e21a3019f",
+      "sourceName": "contracts/interfaces/ITEEServiceRegistry.sol",
+      "solcConfig": {
+        "version": "0.8.26",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "paris",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.24"
+      ],
+      "artifacts": [
+        "ITEEServiceRegistry"
+      ]
+    }
+  }
+}
